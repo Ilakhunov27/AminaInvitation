@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тебе пришёл аирдроп</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1e2618;
+    --crate: #d4c49a;
+    --ink: #1a2114;
+    --orange: #ff7a1a;
+    --orange-dark: #c45a0c;
+    --smoke: #f0e8d0;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { min-height: 100%; }
+  body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Rubik", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding: max(12px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  #sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background-color: #1e2618;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  #sky::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(30,38,24,.35) 0%, rgba(30,38,24,.55) 50%, rgba(30,38,24,.75) 100%);
+    pointer-events: none;
+  }
+  #sky::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(135deg, rgba(0,0,0,.05) 0 2px, transparent 2px 16px);
+    pointer-events: none;
+  }
+  .sun {
+    position: absolute; top: 8%; right: 8%; width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle, #ffe08a 0 32%, rgba(255,208,100,.35) 38% 55%, transparent 70%);
+    box-shadow: 0 0 60px 20px rgba(255,180,60,.25);
+    animation: sunPulse 6s ease-in-out infinite alternate;
+  }
+  @keyframes sunPulse {
+    from { transform: scale(1); opacity: .9; }
+    to   { transform: scale(1.08); opacity: 1; }
+  }
+  .jumper { position: absolute; top: -140px; animation: descend linear infinite; will-change: transform; }
+  .jumper svg { display: block; width: 100%; height: auto; transform-origin: 50% 0; animation: swing ease-in-out infinite alternate; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+  @keyframes descend { from { transform: translate3d(0, -10vh, 0); } to { transform: translate3d(var(--dx), 120vh, 0); } }
+  @keyframes swing { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  .plane { position: absolute; top: 6%; left: 0; width: 130px; opacity: .85; animation: fly 36s linear infinite; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+  @keyframes fly { 0% { transform: translateX(-170px); } 42%, 100% { transform: translateX(calc(100vw + 170px)); } }
+  .hills { position: absolute; left: 0; bottom: 0; width: 100%; height: 120px; display: block; }
+
+  #petals { position: fixed; inset: -40px; pointer-events: none; z-index: 0; transition: transform .6s ease-out; }
+  .petal { position: absolute; top: -60px; animation: fall linear infinite; opacity: .9; filter: drop-shadow(0 1px 2px rgba(0,0,0,.2)); }
+  .petal svg { width: 100%; height: 100%; display: block; animation: spin ease-in-out infinite alternate; }
+  @keyframes fall {
+    0%   { transform: translate3d(0, -10vh, 0); }
+    100% { transform: translate3d(var(--drift), 115vh, 0); }
+  }
+  @keyframes spin { from { transform: rotate(-45deg) scale(.85); } to { transform: rotate(65deg) scale(1.1); } }
+
+  .stage { position: relative; z-index: 1; width: 100%; max-width: 430px; margin: auto; }
+
+  .feed { display: grid; gap: 6px; margin-bottom: 12px; min-height: 66px; }
+  .feed p {
+    background: rgba(12, 16, 10, .78);
+    border-left: 4px solid var(--orange);
+    color: var(--smoke);
+    font-size: 13.5px;
+    padding: 9px 13px;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translateX(60px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .feed p.in { animation: slide .5s cubic-bezier(.2,.9,.3,1) forwards; }
+  @keyframes slide { to { opacity: 1; transform: none; } }
+
+  .drop { animation: land 1.4s cubic-bezier(.2,.8,.25,1) both; }
+  @keyframes land {
+    0%   { transform: translateY(-110vh) rotate(-4deg); }
+    70%  { transform: translateY(8px) rotate(2deg); }
+    85%  { transform: translateY(-4px) rotate(-1deg); }
+    100% { transform: translateY(0) rotate(0); }
+  }
+
+  .chute { display: block; width: 72%; margin: 0 auto -6px; transform-origin: 50% 100%; animation: sway 4s ease-in-out 1.4s infinite alternate; filter: drop-shadow(0 4px 8px rgba(0,0,0,.25)); }
+  @keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+
+  .crate {
+    background: linear-gradient(160deg, #e0d0a4 0%, var(--crate) 40%, #c4b48a 100%);
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    padding: 22px 16px 24px;
+    position: relative;
+    box-shadow: 0 12px 0 rgba(0,0,0,.3), 0 20px 40px rgba(0,0,0,.2);
+    text-align: center;
+  }
+  .crate::before {
+    content: ""; position: absolute; inset: 7px;
+    border: 2px dashed rgba(31,38,25,.4); border-radius: 4px; pointer-events: none;
+  }
+
+  .corner { position: absolute; bottom: -16px; width: 62px; transform-origin: 50% 100%; animation: bloom 3.2s ease-in-out infinite alternate; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.2)); }
+  .corner.l { left: -14px; }
+  .corner.r { right: -14px; animation-delay: -1.6s; }
+  @keyframes bloom { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+
+  h1 {
+    font-family: "Russo One", Impact, sans-serif; font-weight: 400;
+    font-size: clamp(26px, 8vw, 34px); line-height: 1.1; letter-spacing: .5px; margin-bottom: 10px;
+  }
+  .lead { font-size: 15.5px; line-height: 1.5; color: #2a3220; }
+
+  .loot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 6px; position: relative; z-index: 1; }
+  .item {
+    background: rgba(31,38,25,.08);
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 10px 4px 8px;
+    font-family: "Rubik", sans-serif; font-size: 12.5px; font-weight: 500; color: var(--ink);
+    display: grid; justify-items: center; gap: 4px;
+    opacity: 0; transform: translateY(14px) scale(.9);
+    animation: pop .5s cubic-bezier(.2,1.4,.4,1) forwards;
+    transition: transform .2s, background .2s, box-shadow .2s;
+    cursor: pointer;
+  }
+  .item:nth-child(1) { animation-delay: 1.7s; }
+  .item:nth-child(2) { animation-delay: 1.85s; }
+  .item:nth-child(3) { animation-delay: 2.0s; }
+  @keyframes pop { to { opacity: 1; transform: none; } }
+  .item svg { width: 46px; height: 46px; }
+  .item:hover, .item.on {
+    background: rgba(255,122,26,.22);
+    transform: translateY(-4px) rotate(-2deg);
+    box-shadow: 0 6px 12px rgba(0,0,0,.12);
+  }
+  .item:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  .time { margin: 14px 0 2px; position: relative; z-index: 1; }
+  .time-title { font-size: 14.5px; font-weight: 500; margin-bottom: 8px; color: #2a3220; }
+  .chips { display: flex; gap: 10px; justify-content: center; }
+  .chip {
+    font-family: "Russo One", Impact, sans-serif; font-size: 19px; color: var(--ink);
+    background: var(--smoke); border: 3px solid var(--ink); border-radius: 8px;
+    padding: 8px 22px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    transition: transform .15s, background .15s, box-shadow .15s, color .15s;
+  }
+  .chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .chip[aria-pressed="true"] {
+    background: linear-gradient(160deg, #ff8c30, var(--orange));
+    color: #fff;
+    box-shadow: 0 4px 0 var(--orange-dark);
+    transform: translateY(-2px);
+  }
+  .chips.shake { animation: shake .45s; }
+  @keyframes shake { 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+
+  .question { font-family: "Russo One", Impact, sans-serif; font-size: clamp(22px, 7vw, 28px); margin: 14px 0 12px; position: relative; z-index: 1; }
+
+  .answers { display: flex; gap: 14px; justify-content: center; align-items: center; height: 64px; position: relative; z-index: 1; }
+  button.btn {
+    font-family: "Russo One", Impact, sans-serif; font-size: 18px;
+    border: 3px solid var(--ink); border-radius: 8px; padding: 12px 26px;
+    cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  #yes {
+    background: linear-gradient(160deg, #ff8c30, var(--orange));
+    color: #fff;
+    box-shadow: 0 4px 0 var(--orange-dark);
+    transition: transform .25s ease, box-shadow .15s;
+  }
+  #yes:active { box-shadow: 0 1px 0 var(--orange-dark); }
+  #no {
+    background: var(--smoke); color: var(--ink); white-space: nowrap;
+    transition: left .28s cubic-bezier(.3,1.4,.5,1), top .28s cubic-bezier(.3,1.4,.5,1);
+    z-index: 50;
+  }
+  .ph { display: inline-block; }
+
+  .hint { font-size: 13.5px; opacity: .85; margin-top: 12px; min-height: 36px; line-height: 1.35; position: relative; z-index: 1; color: #2a3220; }
+
+  .done { display: none; padding: 10px 0 14px; position: relative; z-index: 1; }
+  .done .big { font-size: 56px; line-height: 1; margin-bottom: 8px; }
+  .done a { color: var(--ink); font-weight: 500; text-decoration-color: var(--orange); }
+  body.accepted .ask { display: none; }
+  body.accepted .done { display: block; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drop, .chute, .corner, .item, .feed p, .sun { animation: none; opacity: 1; transform: none; }
+    #petals, .jumper, .plane { display: none; }
+    .chips.shake { animation: none; }
+    #no { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="flower" viewBox="0 0 100 100">
+      <g fill="currentColor">
+        <ellipse cx="50" cy="27" rx="14" ry="24"/>
+        <ellipse cx="50" cy="27" rx="14" ry="24" transform="rotate(72 50 50)"/>
+        <ellipse cx="50" cy="27" rx="14" ry="24" transform="rotate(144 50 50)"/>
+        <ellipse cx="50" cy="27" rx="14" ry="24" transform="rotate(216 50 50)"/>
+        <ellipse cx="50" cy="27" rx="14" ry="24" transform="rotate(288 50 50)"/>
+      </g>
+      <circle cx="50" cy="50" r="11" fill="#f7d77a" stroke="#1f2619" stroke-width="3"/>
+    </symbol>
+  </defs>
+</svg>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="jumper" viewBox="0 0 60 100">
+      <path d="M3 34 C3 4 57 4 57 34 C47 25 38 25 30 34 C22 25 13 25 3 34Z" fill="currentColor" stroke="#1f2619" stroke-width="2.5"/>
+      <path d="M3 34 L28 66 M30 34 L30 66 M57 34 L32 66" stroke="#1f2619" stroke-width="1.5" fill="none"/>
+      <circle cx="30" cy="69" r="5.5" fill="#e9e2cb" stroke="#1f2619" stroke-width="2"/>
+      <path d="M24 74 H36 L38 92 H22Z" fill="#4d5a33" stroke="#1f2619" stroke-width="2"/>
+      <path d="M26 92 L25 100 M34 92 L35 100" stroke="#1f2619" stroke-width="3" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="sky" aria-hidden="true">
+  <div class="sun"></div>
+  <svg class="plane" viewBox="0 0 120 40">
+    <path d="M6 20 C6 14 20 12 60 12 L100 14 C112 15 116 18 116 21 C116 24 112 26 100 27 L60 28 C20 28 6 26 6 20Z" fill="#1f2619"/>
+    <path d="M52 20 L70 2 L78 2 L70 20Z M52 20 L70 38 L78 38 L70 20Z" fill="#1f2619"/>
+    <path d="M10 18 L2 6 L14 8 L18 16Z" fill="#1f2619"/>
+  </svg>
+  <div id="jumpers"></div>
+  <svg class="hills" viewBox="0 0 400 110" preserveAspectRatio="none">
+    <path d="M0 70 C50 40 90 40 140 62 C190 82 230 40 290 44 C340 47 370 62 400 52 V110 H0Z" fill="#1a2214"/>
+    <path d="M0 92 C60 70 120 78 180 90 C250 104 320 76 400 86 V110 H0Z" fill="#12180e"/>
+  </svg>
+</div>
+
+<div id="petals" aria-hidden="true"></div>
+
+<main class="stage">
+  <div class="feed" aria-live="polite">
+    <p id="f1">📦 Аирдроп приземлился рядом с тобой Амина</p>
+    <p id="f2">🎮 Дильмурат ждёт тебя в игре</p>
+  </div>
+
+  <div class="drop">
+    <svg class="chute" viewBox="0 0 320 120" aria-hidden="true">
+      <path d="M10 92 C10 20 310 20 310 92 C275 70 245 70 215 92 C190 70 130 70 105 92 C75 70 45 70 10 92Z" fill="#ff7a1a" stroke="#1f2619" stroke-width="3"/>
+      <path d="M105 92 C115 40 205 40 215 92" fill="none" stroke="#1f2619" stroke-width="2" opacity=".5"/>
+      <path d="M10 92 L150 120 M105 92 L155 120 M215 92 L165 120 M310 92 L170 120" stroke="#1f2619" stroke-width="2" fill="none"/>
+    </svg>
+
+    <section class="crate">
+      <div class="ask">
+        <h1>Тебе пришёл аирдроп</h1>
+        <p class="lead">Внутри ящика приглашение в PUBG и пара предметов. Нажми на них.</p>
+
+        <div class="loot">
+          <button class="item" type="button" data-joke="Шлем 3 уровня: выдержит любые мои шутки">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M8 40 C8 18 22 8 34 8 C48 8 58 20 56 40 Z" fill="#6f7f4a" stroke="#1f2619" stroke-width="3"/>
+              <rect x="6" y="38" width="52" height="8" rx="3" fill="#4d5a33" stroke="#1f2619" stroke-width="3"/>
+              <path d="M20 14 C26 10 34 10 40 12" stroke="#a9b97a" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M44 46 L44 54" stroke="#1f2619" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            Шлем 3 ур.
+          </button>
+          <button class="item" type="button" data-joke="Сковородка: главный аргумент в споре, кто ведёт машину">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="26" cy="26" r="18" fill="#3b4234" stroke="#1f2619" stroke-width="3"/>
+              <circle cx="26" cy="26" r="11" fill="#555e4b"/>
+              <path d="M39 39 L58 58" stroke="#1f2619" stroke-width="9" stroke-linecap="round"/>
+              <path d="M39 39 L58 58" stroke="#8b6b3d" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            Сковородка
+          </button>
+          <button class="item" type="button" data-joke="Аптечка: лечит поражения и плохое настроение">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <rect x="6" y="16" width="52" height="38" rx="6" fill="#e9e2cb" stroke="#1f2619" stroke-width="3"/>
+              <path d="M22 16 V11 H42 V16" fill="none" stroke="#1f2619" stroke-width="3"/>
+              <path d="M32 24 V46 M21 35 H43" stroke="#e8604f" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            Аптечка
+          </button>
+        </div>
+
+        <div class="time">
+          <p class="time-title">Во сколько заходим? Выбери:</p>
+          <div class="chips" id="chips" role="group" aria-label="Время">
+            <button class="chip" type="button" data-time="9" aria-pressed="false">в 9</button>
+            <button class="chip" type="button" data-time="10" aria-pressed="false">в 10</button>
+          </div>
+        </div>
+
+        <p class="question">Сыграешь со мной?</p>
+
+        <div class="answers" id="answers">
+          <button class="btn" id="yes" type="button">Да</button>
+          <button class="btn" id="no" type="button">Нет</button>
+        </div>
+        <p class="hint" id="hint">С тобой даже в Починки приземляться не страшно</p>
+      </div>
+
+      <div class="done" role="status" aria-live="polite">
+        <div class="big">🪂</div>
+        <h1>Приземляемся!</h1>
+        <p class="lead">Открываю WhatsApp, напиши мне, когда заходим.</p>
+        <p class="hint"><a id="fallback" href="#">Не открылось? Нажми сюда</a></p>
+      </div>
+
+      <svg class="corner l" viewBox="0 0 80 120" aria-hidden="true">
+        <path d="M40 120 C40 92 38 76 40 52" stroke="#4d6b2f" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M40 98 C26 94 20 84 20 76 C32 78 40 86 40 98Z" fill="#6c8c3f" stroke="#1f2619" stroke-width="2"/>
+        <path d="M40 84 C52 80 60 72 60 64 C48 66 40 74 40 84Z" fill="#6c8c3f" stroke="#1f2619" stroke-width="2"/>
+        <use href="#flower" x="8" y="0" width="64" height="64" style="color:#ff6b8a"/>
+      </svg>
+      <svg class="corner r" viewBox="0 0 80 120" aria-hidden="true">
+        <path d="M40 120 C40 92 42 76 40 52" stroke="#4d6b2f" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M40 98 C54 94 60 84 60 76 C48 78 40 86 40 98Z" fill="#6c8c3f" stroke="#1f2619" stroke-width="2"/>
+        <path d="M40 84 C28 80 20 72 20 64 C32 66 40 74 40 84Z" fill="#6c8c3f" stroke="#1f2619" stroke-width="2"/>
+        <use href="#flower" x="8" y="0" width="64" height="64" style="color:#ffd56a"/>
+      </svg>
+    </section>
+  </div>
+</main>
+
+<script>
+  // ====== ИЗМЕНИ ТОЛЬКО ЭТО ======
+  var BACKGROUND_URL = "pubg.jpg";   // <-- сюда путь или ссылку на картинку
+  var WHATSAPP_NUMBER = "77002383389";
+  var MESSAGES = [
+    "Я готова, Дильмурат! Время: {t}. Сковородку беру с собой, так что не опаздывай 🍳",
+    "Дильмурат, аирдроп принят, я готова! Заходим в {t}. Аптечки делим поровну 😄",
+    "Я готова, Дильмурат! Время: {t}. Обещаю не стрелять в тебя первой... постараюсь 😏"
+  ];
+  // ================================
+
+  // фон
+  document.getElementById("sky").style.backgroundImage = 'url("' + BACKGROUND_URL + '")';
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var colors = [
+    "#ff7a1a", "#ffd56a", "#f0e8d0", "#ff6b8a", "#9dce5c",
+    "#6ec8ff", "#c78bff", "#ff9f5a", "#e8f5a0", "#ffb3c6"
+  ];
+  var NS = "http://www.w3.org/2000/svg";
+
+  function flowerEl(color) {
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.style.color = color;
+    var use = document.createElementNS(NS, "use");
+    use.setAttribute("href", "#flower");
+    svg.appendChild(use);
+    return svg;
+  }
+
+  var petals = document.getElementById("petals");
+  if (!reduce) {
+    for (var i = 0; i < 20; i++) {
+      var p = document.createElement("div");
+      p.className = "petal";
+      var size = 16 + Math.random() * 24;
+      p.style.width = p.style.height = size + "px";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.setProperty("--drift", (Math.random() * 140 - 70) + "px");
+      p.style.animationDuration = (9 + Math.random() * 12) + "s";
+      p.style.animationDelay = (-Math.random() * 22) + "s";
+      var f = flowerEl(colors[i % colors.length]);
+      f.style.animationDuration = (1.8 + Math.random() * 3.5) + "s";
+      p.appendChild(f);
+      petals.appendChild(p);
+    }
+    window.addEventListener("pointermove", function (e) {
+      var x = (e.clientX / window.innerWidth - .5) * -28;
+      var y = (e.clientY / window.innerHeight - .5) * -28;
+      petals.style.transform = "translate(" + x + "px," + y + "px)";
+    });
+  }
+
+  if (!reduce) {
+    var jc = document.getElementById("jumpers");
+    var jcolors = ["#ff7a1a", "#ffd56a", "#ff6b8a", "#9dce5c", "#6ec8ff", "#c78bff", "#f0e8d0"];
+    for (var j = 0; j < 9; j++) {
+      var w = 32 + Math.random() * 50;
+      var d = document.createElement("div");
+      d.className = "jumper";
+      d.style.width = w + "px";
+      d.style.left = (Math.random() * 92) + "%";
+      d.style.opacity = (0.5 + w / 130).toFixed(2);
+      d.style.setProperty("--dx", (Math.random() * 180 - 90) + "px");
+      d.style.animationDuration = (24 - w / 5 + Math.random() * 12).toFixed(1) + "s";
+      d.style.animationDelay = (-Math.random() * 32).toFixed(1) + "s";
+      var sv = document.createElementNS(NS, "svg");
+      sv.setAttribute("viewBox", "0 0 60 100");
+      sv.style.color = jcolors[j % jcolors.length];
+      sv.style.animationDuration = (2.2 + Math.random() * 2.5) + "s";
+      var u = document.createElementNS(NS, "use");
+      u.setAttribute("href", "#jumper");
+      sv.appendChild(u);
+      d.appendChild(sv);
+      jc.appendChild(d);
+    }
+  }
+
+  setTimeout(function () { document.getElementById("f1").classList.add("in"); }, 1500);
+  setTimeout(function () { document.getElementById("f2").classList.add("in"); }, 2400);
+
+  var yes = document.getElementById("yes");
+  var no = document.getElementById("no");
+  var hint = document.getElementById("hint");
+
+  var items = document.querySelectorAll(".item");
+  items.forEach(function (it) {
+    it.addEventListener("click", function () {
+      items.forEach(function (o) { o.classList.remove("on"); });
+      it.classList.add("on");
+      hint.textContent = it.getAttribute("data-joke");
+    });
+  });
+
+  var chosen = null;
+  var chips = document.querySelectorAll(".chip");
+  var chipsBox = document.getElementById("chips");
+  chips.forEach(function (c) {
+    c.addEventListener("click", function () {
+      chips.forEach(function (o) { o.setAttribute("aria-pressed", "false"); });
+      c.setAttribute("aria-pressed", "true");
+      chosen = c.getAttribute("data-time");
+      hint.textContent = chosen === "9" ? "В 9? Ранняя пташка, уважаю" : "В 10? Значит, самая боевая часть вечера";
+    });
+  });
+
+  var noTexts = ["Нет", "Точно нет?", "Ну пожалуйста", "Не получится 😏", "Я быстрее", "Сдавайся", "Ладно, жми «Да»"];
+  var hints = [
+    "Кнопка «Нет» на ремонте",
+    "Она вообще-то трусливая",
+    "Говорят, у нас хорошая синергия",
+    "Я в тебя верю, а в кнопку «Нет» не верю",
+    "Попробуй ещё, мне нравится смотреть",
+    "Ещё чуть-чуть, и ты согласишься"
+  ];
+  var dodges = 0;
+  var placeholder = null;
+
+  function overlaps(a, b) {
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  function dodge(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var r = no.getBoundingClientRect();
+
+    if (!placeholder) {
+      placeholder = document.createElement("span");
+      placeholder.className = "ph";
+      placeholder.style.width = r.width + "px";
+      placeholder.style.height = r.height + "px";
+      no.parentNode.insertBefore(placeholder, no);
+      document.body.appendChild(no);
+      no.style.position = "fixed";
+      no.style.left = r.left + "px";
+      no.style.top = r.top + "px";
+      void no.offsetWidth;
+    }
+    dodges++;
+    no.textContent = noTexts[Math.min(dodges, noTexts.length - 1)];
+    hint.textContent = hints[Math.min(dodges - 1, hints.length - 1)];
+    items.forEach(function (o) { o.classList.remove("on"); });
+
+    var w = no.offsetWidth, h = no.offsetHeight, m = 10;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var yr = yes.getBoundingClientRect();
+    var pad = 24, x, y, tries = 0, box;
+    do {
+      x = m + Math.random() * Math.max(1, vw - w - 2 * m);
+      y = m + Math.random() * Math.max(1, vh - h - 2 * m);
+      box = { left: x, right: x + w, top: y, bottom: y + h };
+      tries++;
+    } while (tries < 40 && (
+      overlaps(box, { left: yr.left - pad, right: yr.right + pad, top: yr.top - pad, bottom: yr.bottom + pad }) ||
+      Math.hypot(x - r.left, y - r.top) < 90
+    ));
+    no.style.left = x + "px";
+    no.style.top = y + "px";
+    yes.style.transform = "scale(" + Math.min(1 + dodges * 0.06, 1.4) + ")";
+  }
+
+  no.addEventListener("pointerenter", dodge);
+  no.addEventListener("pointerdown", dodge);
+  no.addEventListener("touchstart", dodge, { passive: false });
+  no.addEventListener("click", dodge);
+
+  window.addEventListener("resize", function () {
+    if (placeholder) {
+      var r = no.getBoundingClientRect();
+      no.style.left = Math.max(10, Math.min(r.left, window.innerWidth - r.width - 10)) + "px";
+      no.style.top = Math.max(10, Math.min(r.top, window.innerHeight - r.height - 10)) + "px";
+    }
+  });
+
+  function burst() {
+    if (reduce || !yes.animate) return;
+    var r = yes.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (var i = 0; i < 32; i++) {
+      var d = document.createElement("div");
+      var s = 18 + Math.random() * 26;
+      d.style.cssText = "position:fixed;z-index:100;pointer-events:none;width:" + s + "px;height:" + s + "px;left:" + (cx - s / 2) + "px;top:" + (cy - s / 2) + "px";
+      d.appendChild(flowerEl(colors[i % colors.length]));
+      d.firstChild.style.cssText = "width:100%;height:100%;display:block;color:" + colors[i % colors.length];
+      document.body.appendChild(d);
+      var a = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 180;
+      d.animate([
+        { transform: "translate(0,0) rotate(0) scale(.35)", opacity: 1 },
+        { transform: "translate(" + Math.cos(a) * dist + "px," + (Math.sin(a) * dist - 50) + "px) rotate(" + (Math.random() * 560 - 280) + "deg) scale(1.05)", opacity: 0 }
+      ], { duration: 950 + Math.random() * 550, easing: "cubic-bezier(.2,.8,.3,1)", fill: "forwards" });
+      setTimeout(function (el) { return function () { el.remove(); }; }(d), 1700);
+    }
+  }
+
+  yes.addEventListener("click", function () {
+    if (!chosen) {
+      chipsBox.classList.remove("shake");
+      void chipsBox.offsetWidth;
+      chipsBox.classList.add("shake");
+      hint.textContent = "Сначала выбери время, а то я не пойму, когда тебя ждать";
+      return;
+    }
+    var msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)].replace("{t}", chosen);
+    var url = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
+    burst();
+    document.body.classList.add("accepted");
+    no.style.display = "none";
+    document.getElementById("fallback").href = url;
+    setTimeout(function () { window.location.href = url; }, 1100);
+  });
+</script>
+</body>
+</html>
